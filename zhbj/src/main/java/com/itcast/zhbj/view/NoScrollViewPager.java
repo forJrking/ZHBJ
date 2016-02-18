@@ -8,11 +8,8 @@ import android.view.MotionEvent;
 /*
  * @创建者     Administrator
  * @创建时间   2016/2/17 20:46
- * @描述	      ${TODO}
- *
- * @更新者     $Author$
- * @更新时间   $Date$
- * @更新描述   ${TODO}
+ * @描述	      不可滑动的ViewPager
+
  */
 public class NoScrollViewPager extends ViewPager {
     public NoScrollViewPager(Context context) {
@@ -26,8 +23,13 @@ public class NoScrollViewPager extends ViewPager {
 
     @Override
     public boolean onTouchEvent(MotionEvent ev) {
+        //不消费触摸事件
         return false;
     }
 
-
+    @Override
+    public boolean onInterceptTouchEvent(MotionEvent ev) {
+        //不拦截子的事件
+        return false;
+    }
 }

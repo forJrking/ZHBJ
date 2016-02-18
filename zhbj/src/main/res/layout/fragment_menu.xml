@@ -2,12 +2,14 @@
              xmlns:tools="http://schemas.android.com/tools"
              android:layout_width="match_parent"
              android:layout_height="match_parent"
+             android:background="#000000"
              tools:context="com.itcast.zhbj.fragment.MenuFragment">
 
-    <!-- TODO: Update blank fragment layout -->
-    <TextView
+    <ListView
+        android:paddingTop="45dp"
+        android:id="@+id/menu_fm_listview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:text="@string/hello_blank_fragment"/>
+        />
 
 </FrameLayout>

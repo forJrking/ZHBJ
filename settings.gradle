@@ -1,1 +1,1 @@
-include ':zhbj', ':slidingmenu_library'
+include ':zhbj', ':slidingmenu_library', ':volley-lib'

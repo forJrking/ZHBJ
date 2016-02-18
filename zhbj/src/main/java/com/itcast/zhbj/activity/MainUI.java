@@ -15,6 +15,9 @@ import com.jeremyfeinstein.slidingmenu.lib.app.SlidingFragmentActivity;
 
 public class MainUI extends SlidingFragmentActivity {
 
+    private static final String TAG_MENU = "menu";
+    private static final String TAG_CONTENT = "content";
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
        // requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -46,9 +49,24 @@ public class MainUI extends SlidingFragmentActivity {
 
        FragmentTransaction transaction = fm.beginTransaction();
 
-        transaction.replace(R.id.main_menu_container,new MenuFragment());
-        transaction.replace(R.id.main_content_container,new ContentFragment());
+        transaction.replace(R.id.main_menu_container,new MenuFragment(),TAG_MENU);
+        transaction.replace(R.id.main_content_container,new ContentFragment(),TAG_CONTENT);
 
         transaction.commit();
+    }
+
+    public MenuFragment getMenuFragment(){
+        FragmentManager fm = getSupportFragmentManager();
+
+        return (MenuFragment) fm.findFragmentByTag(TAG_MENU);
+    }
+
+    /*
+     *获得内容部分的fragment
+     */
+    public ContentFragment getContentFragment(){
+        FragmentManager fm = getSupportFragmentManager();
+
+        return (ContentFragment) fm.findFragmentByTag(TAG_CONTENT);
     }
 }
