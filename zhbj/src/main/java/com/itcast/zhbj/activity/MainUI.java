@@ -30,8 +30,6 @@ public class MainUI extends SlidingFragmentActivity {
         SlidingMenu menu = getSlidingMenu();
         //全屏触摸滑出菜单
         menu.setTouchModeAbove(SlidingMenu.TOUCHMODE_FULLSCREEN);
-        //左侧滑出
-        menu.setMode(SlidingMenu.LEFT);
         //设置菜单宽度
         menu.setBehindWidth(DensityUtils.dp2px(this,120));
         //设置阴影

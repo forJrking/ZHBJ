@@ -17,4 +17,43 @@
         <item name="android:button">@null</item>
         <item name="android:textColor">@color/tab_text_selector</item>
     </style>
+
+    <style name="StyledIndicators" parent="@android:style/Theme.Light">
+        <!-- <item name="vpiCirclePageIndicatorStyle">@style/CustomCirclePageIndicator</item>
+         <item name="vpiLinePageIndicatorStyle">@style/CustomLinePageIndicator</item>
+         <item name="vpiTitlePageIndicatorStyle">@style/CustomTitlePageIndicator</item>-->
+        <item name="vpiTabPageIndicatorStyle">@style/CustomTabPageIndicator</item>
+        <!--    <item name="vpiUnderlinePageIndicatorStyle">@style/CustomUnderlinePageIndicator</item>-->
+
+        <item name="android:windowNoTitle">true</item>
+        <!--界面背景-->
+        <item name="android:windowBackground">@color/bg</item>
+        <item name="android:listViewStyle">@style/MyListView</item>
+    </style>
+
+    <style name="MyListView" parent="@android:style/Widget.ListView">
+        <item name="android:listSelector">@android:color/transparent</item>
+        <item name="android:cacheColorHint">@android:color/transparent</item>
+        <item name="android:divider">@android:color/transparent</item>
+    </style>
+
+    <style name="CustomTabPageIndicator" parent="Widget.TabPageIndicator">
+        <item name="android:background">@drawable/custom_tab_indicator</item>
+        <item name="android:textAppearance">@style/CustomTabPageIndicator.Text</item>
+        <item name="android:textColor">@color/custom_tab_textcolor</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:textStyle">bold</item>
+        <!--<item name="android:divider">@drawable/custom_tab_indicator_divider</item>
+        <item name="android:dividerPadding">10dp</item>
+        <item name="android:showDividers">middle</item>-->
+        <item name="android:paddingLeft">18dp</item>
+        <item name="android:paddingRight">18dp</item>
+        <item name="android:fadingEdge">horizontal</item>
+        <item name="android:fadingEdgeLength">8dp</item>
+    </style>
+
+    <style name="CustomTabPageIndicator.Text" parent="android:TextAppearance.Medium">
+        <item name="android:typeface">monospace</item>
+    </style>
+
 </resources>

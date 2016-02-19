@@ -124,7 +124,8 @@ public class ContentFragment extends Fragment {
         MainUI ui = (MainUI) mActivity;
 
         SlidingMenu menu =  ui.getSlidingMenu();
-        menu.setTouchModeAbove(enable?SlidingMenu.LEFT:SlidingMenu.TOUCHMODE_NONE);
+        //控制pager的滑动滑出菜单
+        menu.setTouchModeAbove(enable?SlidingMenu.TOUCHMODE_FULLSCREEN:SlidingMenu.TOUCHMODE_NONE);
     }
 
     private class ContentPagerAdapter extends PagerAdapter {

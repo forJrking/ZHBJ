@@ -1,1 +1,1 @@
-include ':zhbj', ':slidingmenu_library', ':volley-lib'
+include ':zhbj', ':slidingmenu_library', ':volley-lib', ':ViewPagerIndicator_Library'

@@ -10,6 +10,7 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/ViewPagerIndicator_Library" />
             <option value="$PROJECT_DIR$/slidingmenu_library" />
             <option value="$PROJECT_DIR$/volley-lib" />
             <option value="$PROJECT_DIR$/zhbj" />

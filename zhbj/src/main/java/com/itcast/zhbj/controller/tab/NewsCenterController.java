@@ -13,6 +13,7 @@ import com.android.volley.toolbox.Volley;
 import com.google.gson.Gson;
 import com.itcast.zhbj.activity.MainUI;
 import com.itcast.zhbj.bean.NewsCenterBean;
+import com.itcast.zhbj.constant.Constants;
 import com.itcast.zhbj.controller.BaseController;
 import com.itcast.zhbj.controller.TabController;
 import com.itcast.zhbj.controller.menu.InteractMenuController;
@@ -56,15 +57,18 @@ public class NewsCenterController extends TabController {
         mTVTitle.setText("新闻");
         mIvMenu.setVisibility(View.VISIBLE);
 
-        //a) url
-        String url = "http://188.188.5.67:8080/zhbj/categories.json";
+        //url
+        String url = Constants.NEWSCENTER_URL ;
+
+        LogUtils.p(url);
 
         RequestQueue queue = Volley.newRequestQueue(mContext);
         //成功的回调
         Response.Listener<String> success = new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
-                LogUtils.p(response);
+                //持久化存储
+              //  PreferenceUtils.putString(mContext, Constants.);
                 //解析结果 json
                 processData(response);
             }
