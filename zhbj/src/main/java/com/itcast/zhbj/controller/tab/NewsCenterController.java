@@ -1,6 +1,7 @@
 package com.itcast.zhbj.controller.tab;
 
 import android.content.Context;
+import android.text.TextUtils;
 import android.view.View;
 import android.widget.FrameLayout;
 
@@ -22,6 +23,7 @@ import com.itcast.zhbj.controller.menu.PicMenuController;
 import com.itcast.zhbj.controller.menu.SubjectMenuController;
 import com.itcast.zhbj.fragment.MenuFragment;
 import com.itcast.zhbj.utils.LogUtils;
+import com.itcast.zhbj.utils.PreferenceUtils;
 import com.itcast.zhbj.utils.ToastUtils;
 
 import java.util.ArrayList;
@@ -55,20 +57,52 @@ public class NewsCenterController extends TabController {
     public void initData() {
 
         mTVTitle.setText("新闻");
-        mIvMenu.setVisibility(View.VISIBLE);
+        //realTime(); //实时更新
 
+        //隔时更新数据
+        delayData();
+    }
+
+    private void delayData() {
         //url
-        String url = Constants.NEWSCENTER_URL ;
+        final String url = Constants.NEWSCENTER_URL;
+        //隔时更新
+        String json = PreferenceUtils.getString(mContext, url);
 
-        LogUtils.p(url);
+        if (!TextUtils.isEmpty(json)) {
+            long nowTime = PreferenceUtils.getLong(mContext, url + "-time");
+            long currentTime = System.currentTimeMillis();
+            //过期
+            if (nowTime + Constants.DATA_DELAY < currentTime) {
+                LogUtils.p("数据过期####");
+                processData(json);
 
+                //加载网络
+                loadNetData();
+            } else {
+                //没有过期
+                LogUtils.p("数据没过期####");
+                processData(json);
+            }
+        } else {
+            LogUtils.p("初次加载####");
+            loadNetData();
+        }
+    }
+
+    private void loadNetData() {
+
+        final String url = Constants.NEWSCENTER_URL;
         RequestQueue queue = Volley.newRequestQueue(mContext);
         //成功的回调
         Response.Listener<String> success = new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
                 //持久化存储
-              //  PreferenceUtils.putString(mContext, Constants.);
+                LogUtils.p("加载网络数据成功####");
+                PreferenceUtils.putString(mContext, url, response);
+                //存储时间
+                PreferenceUtils.putLong(mContext, url + "-time", System.currentTimeMillis());
                 //解析结果 json
                 processData(response);
             }
@@ -77,7 +111,43 @@ public class NewsCenterController extends TabController {
         Response.ErrorListener error = new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                ToastUtils.showShort(mContext,"请检查网络连接...");
+                LogUtils.p("数据联网失败####");
+                ToastUtils.showShort(mContext, "请检查网络连接...");
+            }
+        };
+
+        StringRequest request = new StringRequest(Request.Method.GET, url, success, error);
+        //发送请求
+        queue.add(request);
+    }
+
+    /**
+     * 实时获取数据
+     */
+    private void realTime() {
+        final String url = Constants.NEWSCENTER_URL;
+        //读取缓存
+        String json = PreferenceUtils.getString(mContext, url);
+        if (!TextUtils.isEmpty(json)) {
+            processData(json);
+        }
+
+        RequestQueue queue = Volley.newRequestQueue(mContext);
+        //成功的回调
+        Response.Listener<String> success = new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+                //持久化存储
+                PreferenceUtils.putString(mContext, url, response);
+                //解析结果 json
+                processData(response);
+            }
+        };
+        //失败
+        Response.ErrorListener error = new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                ToastUtils.showShort(mContext, "请检查网络连接...");
             }
         };
 
@@ -101,7 +171,7 @@ public class NewsCenterController extends TabController {
             BaseController controller = null;
             switch (menu.type) {
                 case 1:
-                    controller = new NewsMenuController(mContext,menu.children);
+                    controller = new NewsMenuController(mContext, menu.children);
                     break;
                 case 2://组图
                     controller = new PicMenuController(mContext);

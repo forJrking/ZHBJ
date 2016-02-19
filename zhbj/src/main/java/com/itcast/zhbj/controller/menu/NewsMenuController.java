@@ -1,17 +1,17 @@
 package com.itcast.zhbj.controller.menu;
 
 import android.content.Context;
-import android.graphics.Color;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
-import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
 
 import com.itcast.zhbj.R;
+import com.itcast.zhbj.activity.MainUI;
 import com.itcast.zhbj.bean.NewsCenterBean;
 import com.itcast.zhbj.controller.BaseController;
+import com.itcast.zhbj.controller.news.NewsListController;
+import com.jeremyfeinstein.slidingmenu.lib.SlidingMenu;
 import com.viewpagerindicator.TabPageIndicator;
 
 import java.util.List;
@@ -19,7 +19,7 @@ import java.util.List;
 import butterknife.Bind;
 import butterknife.ButterKnife;
 
-public class NewsMenuController extends BaseController {
+public class NewsMenuController extends BaseController implements ViewPager.OnPageChangeListener {
 
 
     @Bind(R.id.menu_news_indicator)
@@ -48,6 +48,24 @@ public class NewsMenuController extends BaseController {
         mPager.setAdapter(new NewsAdapter());
         //设置indicator
         mIndicator.setViewPager(mPager);
+        //设置pager监听
+        mPager.addOnPageChangeListener(this);
+    }
+
+    @Override
+    public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+
+    }
+
+    @Override
+    public void onPageSelected(int position) {
+        SlidingMenu menu = ((MainUI)mContext).getSlidingMenu();
+        menu.setTouchModeAbove(position == 0 ? SlidingMenu.TOUCHMODE_FULLSCREEN : SlidingMenu.TOUCHMODE_NONE);
+    }
+
+    @Override
+    public void onPageScrollStateChanged(int state) {
+
     }
 
     private class NewsAdapter extends PagerAdapter {
@@ -67,15 +85,13 @@ public class NewsMenuController extends BaseController {
         @Override
         public Object instantiateItem(ViewGroup container, int position) {
             NewsCenterBean.NewsCenterPagerBean bean = mDatas.get(position);
-            //TODO: 模拟显示
-            TextView tv = new TextView(mContext);
-            tv.setText(bean.title);
-            tv.setTextColor(Color.BLUE);
-            tv.setTextSize(25);
-            tv.setGravity(Gravity.CENTER);
-            //添加显示视图
-            container.addView(tv);
-            return tv;
+
+            NewsListController newsListController = new NewsListController(mContext,bean);
+            View rootView = newsListController.getRootView();
+            container.addView(rootView);
+            //夹在数据
+            newsListController.initData();
+            return rootView;
         }
 
         @Override

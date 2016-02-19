@@ -1,7 +1,6 @@
 package com.itcast.zhbj.view;
 
 import android.content.Context;
-import android.support.v4.view.ViewPager;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 
@@ -11,7 +10,7 @@ import android.view.MotionEvent;
  * @描述	      不可滑动的ViewPager
 
  */
-public class NoScrollViewPager extends ViewPager {
+public class NoScrollViewPager extends LazyViewPager {
     public NoScrollViewPager(Context context) {
         super(context);
     }

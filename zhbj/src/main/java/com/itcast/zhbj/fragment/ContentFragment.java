@@ -76,7 +76,7 @@ public class ContentFragment extends Fragment {
 
         mTabs.setOnCheckedChangeListener(new TabCheckedListener());
         //设置默认选中
-        mTabs.check(R.id.content_rb_newscenter);
+        mTabs.check(R.id.content_rb_home);
     }
 
     public void changeMenu(int position) {
