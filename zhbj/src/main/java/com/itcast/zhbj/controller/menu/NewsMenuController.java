@@ -14,6 +14,8 @@ import com.itcast.zhbj.controller.news.NewsListController;
 import com.jeremyfeinstein.slidingmenu.lib.SlidingMenu;
 import com.viewpagerindicator.TabPageIndicator;
 
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import butterknife.Bind;
@@ -59,13 +61,67 @@ public class NewsMenuController extends BaseController implements ViewPager.OnPa
 
     @Override
     public void onPageSelected(int position) {
-        SlidingMenu menu = ((MainUI)mContext).getSlidingMenu();
+        SlidingMenu menu = ((MainUI) mContext).getSlidingMenu();
         menu.setTouchModeAbove(position == 0 ? SlidingMenu.TOUCHMODE_FULLSCREEN : SlidingMenu.TOUCHMODE_NONE);
     }
 
     @Override
     public void onPageScrollStateChanged(int state) {
+        //解决新闻轮播图 点击后自动开启轮播
+        if (state == ViewPager.SCROLL_STATE_IDLE) {
+            //闲置状态
+            //让内侧轮播的viewpager开始自动轮播
+            notifyIDLE();
+        } else if (state == ViewPager.SCROLL_STATE_DRAGGING) {
+            notifyScroll();
+        }
+    }
 
+    private void notifyScroll() {
+        if (mListener == null) {
+            return;
+        }
+        Iterator<OnViewIDLEListener> iterator = mListener.iterator();
+        while (iterator.hasNext()) {
+            OnViewIDLEListener listener = iterator.next();
+            listener.onScroll();
+        }
+    }
+
+
+    private void notifyIDLE() {
+        if (mListener == null) {
+            return;
+        }
+        Iterator<OnViewIDLEListener> iterator = mListener.iterator();
+        while (iterator.hasNext()) {
+            OnViewIDLEListener listener = iterator.next();
+            listener.onIDLE();
+        }
+    }
+
+    private List<OnViewIDLEListener> mListener;
+
+    public void addOnViewIDLEListener(OnViewIDLEListener listener) {
+        if (this.mListener == null) {
+            this.mListener = new ArrayList<>();
+        }
+        if (this.mListener.contains(listener)) {
+            return;
+        }
+        this.mListener.add(listener);
+    }
+
+    public void removeOnViewIDLEListener(OnViewIDLEListener listener) {
+        if (mListener == null) {
+            return;
+        }
+        this.mListener.remove(listener);
+    }
+
+    public interface OnViewIDLEListener {
+        void onIDLE();
+        void onScroll();
     }
 
     private class NewsAdapter extends PagerAdapter {
@@ -86,16 +142,23 @@ public class NewsMenuController extends BaseController implements ViewPager.OnPa
         public Object instantiateItem(ViewGroup container, int position) {
             NewsCenterBean.NewsCenterPagerBean bean = mDatas.get(position);
 
-            NewsListController newsListController = new NewsListController(mContext,bean);
+            NewsListController newsListController = new NewsListController(mContext, bean);
             View rootView = newsListController.getRootView();
             container.addView(rootView);
             //夹在数据
             newsListController.initData();
+            //设置监听
+            addOnViewIDLEListener(newsListController);
+
+            rootView.setTag(newsListController);
             return rootView;
         }
 
         @Override
         public void destroyItem(ViewGroup container, int position, Object object) {
+            View view = (View) object;
+            NewsListController controller = (NewsListController) view.getTag();
+            removeOnViewIDLEListener(controller);
             container.removeView((View) object);
         }
 

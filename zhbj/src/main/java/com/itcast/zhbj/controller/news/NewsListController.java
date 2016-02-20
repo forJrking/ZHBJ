@@ -5,10 +5,13 @@ import android.os.Handler;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.text.TextUtils;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.TextView;
 
 import com.android.volley.Request;
@@ -23,6 +26,7 @@ import com.itcast.zhbj.bean.NewsCenterBean;
 import com.itcast.zhbj.bean.NewsListPagerBean;
 import com.itcast.zhbj.constant.Constants;
 import com.itcast.zhbj.controller.BaseController;
+import com.itcast.zhbj.controller.menu.NewsMenuController;
 import com.itcast.zhbj.utils.DensityUtils;
 import com.itcast.zhbj.utils.PreferenceUtils;
 import com.squareup.picasso.Picasso;
@@ -32,7 +36,7 @@ import java.util.List;
 import butterknife.Bind;
 import butterknife.ButterKnife;
 
-public class NewsListController extends BaseController implements ViewPager.OnPageChangeListener {
+public class NewsListController extends BaseController implements ViewPager.OnPageChangeListener, NewsMenuController.OnViewIDLEListener {
     @Bind(R.id.news_top_viewpager)
     ViewPager mNewsTopViewpager;
     @Bind(R.id.news_top_tv_title)
@@ -40,8 +44,12 @@ public class NewsListController extends BaseController implements ViewPager.OnPa
     @Bind(R.id.news_top_point_container)
     LinearLayout mNewsTopPointContainer;
 
+    private ListView mNewsListview;
+
     private NewsCenterBean.NewsCenterPagerBean mData;
     private List<NewsListPagerBean.TopNewsBean> mTopNewsDatas;
+    private SwitchTask mTask;
+    private List<NewsListPagerBean.NewsBean> mNewsDatas;
 
     public NewsListController(Context context, NewsCenterBean.NewsCenterPagerBean bean) {
         super(context);
@@ -52,8 +60,12 @@ public class NewsListController extends BaseController implements ViewPager.OnPa
     public View initView(Context context) {
 
         View view = View.inflate(context, R.layout.news_list, null);
-        ButterKnife.bind(this, view);
+        View topView = View.inflate(context, R.layout.news_top, null);
+        ButterKnife.bind(this, topView);
 
+        mNewsListview = (ListView) view.findViewById(R.id.news_listview);
+
+        mNewsListview.addHeaderView(topView);
         return view;
     }
 
@@ -63,7 +75,7 @@ public class NewsListController extends BaseController implements ViewPager.OnPa
         final String url = Constants.BASE_URL + mData.url;
         //读取缓存
         String json = PreferenceUtils.getString(mContext, url);
-        if(!TextUtils.isEmpty(json)){
+        if (!TextUtils.isEmpty(json)) {
             //记载缓存数据
             processData(json);
         }
@@ -74,7 +86,7 @@ public class NewsListController extends BaseController implements ViewPager.OnPa
             @Override
             public void onResponse(String response) {
                 //缓存数据
-                PreferenceUtils.putString(mContext,url,response);
+                PreferenceUtils.putString(mContext, url, response);
                 processData(response);
             }
         };
@@ -122,11 +134,106 @@ public class NewsListController extends BaseController implements ViewPager.OnPa
         //设置viewpager监听
         mNewsTopViewpager.addOnPageChangeListener(this);
         //开启定时器
-        SwitchTask task = null;
-        if(task==null) {
-            task = new SwitchTask();
+        if (mTask == null) {
+            mTask = new SwitchTask();
+            // mTask.start();
         }
-        task.start();
+        mTask.start();//会让轮播多跳动
+
+        //对pager的touch监听
+        pagerListener();
+        //获取新闻条目数据
+        mNewsDatas = bean.data.news;
+        mNewsListview.setAdapter(new NewsAdapter());
+    }
+
+    private class NewsAdapter extends BaseAdapter {
+        @Override
+        public int getCount() {
+            if (mNewsDatas != null) {
+                return mNewsDatas.size();
+            }
+            return 0;
+        }
+
+        @Override
+        public Object getItem(int position) {
+            if (mNewsDatas != null) {
+                return mNewsDatas.get(position);
+            }
+            return null;
+        }
+
+        @Override
+        public long getItemId(int position) {
+            return position;
+        }
+
+        @Override
+        public View getView(int position, android.view.View convertView, ViewGroup parent) {
+            ViewHolder holder = null;
+            if (convertView == null) {
+                //初次加载
+                convertView = View.inflate(mContext, R.layout.item_newslist, null);
+                holder = new ViewHolder();
+                //设置标记
+                convertView.setTag(holder);
+                holder.ivPic = (ImageView) convertView.findViewById(R.id.item_newslist_iv_pic);
+                holder.tvTitle = (TextView) convertView.findViewById(R.id.item_newslist_tv_title);
+                holder.tvData = (TextView) convertView.findViewById(R.id.item_newslist_tv_date);
+
+            } else {
+                holder = (ViewHolder) convertView.getTag();
+            }
+            //加载数据到界面
+            NewsListPagerBean.NewsBean newsBean = mNewsDatas.get(position);
+            holder.tvTitle.setText(newsBean.title);
+            holder.tvData.setText(newsBean.pubdate);
+            String url = newsBean.listimage;
+            url = url.replace(Constants.REPLACE_OLD, Constants.REPLACE_NEW);
+            //记载图片
+            Picasso.with(mContext).load(url).placeholder(R.mipmap.pic_item_list_default).error(R.mipmap.pic_item_list_default).into(holder.ivPic);
+            return convertView;
+        }
+    }
+
+    private class ViewHolder {
+        ImageView ivPic;
+        TextView tvTitle;
+        TextView tvData;
+    }
+
+    private void pagerListener() {
+        mNewsTopViewpager.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                switch (motionEvent.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        //检测到按下就停止轮播
+                        mTask.stop();
+                        break;
+                    case MotionEvent.ACTION_MOVE:
+                        break;
+                    case MotionEvent.ACTION_UP:
+                        mTask.start();
+                        //开启轮播时间不当
+                        break;
+                    case MotionEvent.ACTION_CANCEL:
+                        break;
+                }
+                return false;
+            }
+        });
+    }
+
+    @Override
+    public void onIDLE() {
+        mTask.start();
+    }
+
+    @Override
+    public void onScroll() {
+        mTask.stop();
     }
 
     private class SwitchTask extends Handler implements Runnable {
@@ -148,7 +255,12 @@ public class NewsListController extends BaseController implements ViewPager.OnPa
 
 
         public void start() {
+            this.removeCallbacks(this);
             this.postDelayed(this, 2000);
+        }
+
+        public void stop() {
+            this.removeCallbacks(this);//清空当前任务
         }
     }
 
