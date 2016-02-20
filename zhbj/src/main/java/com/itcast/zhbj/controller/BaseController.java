@@ -3,15 +3,6 @@ package com.itcast.zhbj.controller;
 import android.content.Context;
 import android.view.View;
 
-/*
- * @创建者     Administrator
- * @创建时间   2016/2/17 23:01
- * @描述	      ${TODO}
- *
- * @更新者     $Author$
- * @更新时间   $Date$
- * @更新描述   ${TODO}
- */
 public abstract class BaseController {
     protected View mRootView;
     protected Context mContext;

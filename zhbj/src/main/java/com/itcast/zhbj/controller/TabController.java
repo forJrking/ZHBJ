@@ -10,15 +10,6 @@ import com.itcast.zhbj.R;
 import com.itcast.zhbj.activity.MainUI;
 import com.jeremyfeinstein.slidingmenu.lib.SlidingMenu;
 
-/*
- * @创建者     Administrator
- * @创建时间   2016/2/17 23:37
- * @描述	      ${TODO}
- *
- * @更新者     $Author$
- * @更新时间   $Date$
- * @更新描述   ${TODO}
- */
 public abstract class TabController extends BaseController {
 
     protected ImageView mIvMenu;

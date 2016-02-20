@@ -1,8 +1,10 @@
 package com.itcast.zhbj.controller.news;
 
 import android.content.Context;
+import android.os.Handler;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
+import android.text.TextUtils;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -22,6 +24,7 @@ import com.itcast.zhbj.bean.NewsListPagerBean;
 import com.itcast.zhbj.constant.Constants;
 import com.itcast.zhbj.controller.BaseController;
 import com.itcast.zhbj.utils.DensityUtils;
+import com.itcast.zhbj.utils.PreferenceUtils;
 import com.squareup.picasso.Picasso;
 
 import java.util.List;
@@ -57,15 +60,21 @@ public class NewsListController extends BaseController implements ViewPager.OnPa
     @Override
     public void initData() {
         //轮播图
-        String url = Constants.BASE_URL + mData.url;
-
+        final String url = Constants.BASE_URL + mData.url;
+        //读取缓存
+        String json = PreferenceUtils.getString(mContext, url);
+        if(!TextUtils.isEmpty(json)){
+            //记载缓存数据
+            processData(json);
+        }
         //网络
         RequestQueue queue = Volley.newRequestQueue(mContext);
 
         Response.Listener<String> success = new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
-
+                //缓存数据
+                PreferenceUtils.putString(mContext,url,response);
                 processData(response);
             }
         };
@@ -93,6 +102,8 @@ public class NewsListController extends BaseController implements ViewPager.OnPa
         mNewsTopViewpager.setAdapter(new TopNewsAdapter());
         //轮播图title
         mNewsTopTvTitle.setText(mTopNewsDatas.get(0).title);
+        //清空转点容器
+        mNewsTopPointContainer.removeAllViews();
 
         for (int i = 0; i < mTopNewsDatas.size(); i++) {
             View point = new View(mContext);
@@ -100,16 +111,45 @@ public class NewsListController extends BaseController implements ViewPager.OnPa
                     DensityUtils.dp2px(mContext, 6), DensityUtils.dp2px(mContext, 6));
 
             point.setBackgroundResource(R.mipmap.dot_normal);
-            if(i!=0){
-                params.leftMargin = DensityUtils.dp2px(mContext,6);
-            }else{
+            if (i != 0) {
+                params.leftMargin = DensityUtils.dp2px(mContext, 6);
+            } else {
                 point.setBackgroundResource(R.mipmap.dot_focus);
             }
 
-            mNewsTopPointContainer.addView(point,params);
+            mNewsTopPointContainer.addView(point, params);
         }
         //设置viewpager监听
         mNewsTopViewpager.addOnPageChangeListener(this);
+        //开启定时器
+        SwitchTask task = null;
+        if(task==null) {
+            task = new SwitchTask();
+        }
+        task.start();
+    }
+
+    private class SwitchTask extends Handler implements Runnable {
+
+        @Override
+        public void run() {
+            //定时自动轮播
+            //选中下一个
+            int item = mNewsTopViewpager.getCurrentItem();
+            if (item == mNewsTopViewpager.getAdapter().getCount() - 1) {
+                item = 0;
+            } else {
+                item++;
+            }
+            mNewsTopViewpager.setCurrentItem(item);
+            //递归执行定时
+            this.postDelayed(this, 2000);
+        }
+
+
+        public void start() {
+            this.postDelayed(this, 2000);
+        }
     }
 
     @Override
@@ -124,7 +164,7 @@ public class NewsListController extends BaseController implements ViewPager.OnPa
         for (int i = 0; i < count; i++) {
             View view = mNewsTopPointContainer.getChildAt(i);
 
-            view.setBackgroundResource(i==position?R.mipmap.dot_focus:R.mipmap.dot_normal);
+            view.setBackgroundResource(i == position ? R.mipmap.dot_focus : R.mipmap.dot_normal);
         }
         //标题的改变
         mNewsTopTvTitle.setText(mTopNewsDatas.get(position).title);
@@ -135,12 +175,11 @@ public class NewsListController extends BaseController implements ViewPager.OnPa
 
     }
 
-
     private class TopNewsAdapter extends PagerAdapter {
         @Override
         public int getCount() {
             if (mTopNewsDatas != null) {
-               return mTopNewsDatas.size();
+                return mTopNewsDatas.size();
             }
             return 0;
         }
@@ -159,10 +198,11 @@ public class NewsListController extends BaseController implements ViewPager.OnPa
             String url = mTopNewsDatas.get(position).topimage;
             //模拟器使用 TODO:
             url = url.replace(Constants.REPLACE_OLD, Constants.REPLACE_NEW);
-           // LogUtils.p("######图片加载url" + url);
+            // LogUtils.p("######图片加载url" + url);
             Picasso.with(mContext).load(url).into(iv);
+            //添加视图
             container.addView(iv);
-
+            //返回标记
             return iv;
         }
 

@@ -11,7 +11,6 @@ import com.itcast.zhbj.controller.BaseController;
 /*
  * @创建者     Administrator
  * @创建时间   2016/2/18 19:55
- * @描述	      ${TODO}
  */
 public class PicMenuController extends BaseController {
     public PicMenuController(Context context) {
