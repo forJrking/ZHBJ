@@ -1,6 +1,8 @@
 package com.itcast.zhbj.controller.news;
 
 import android.content.Context;
+import android.content.Intent;
+import android.graphics.Color;
 import android.os.Handler;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
@@ -8,10 +10,10 @@ import android.text.TextUtils;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ListView;
 import android.widget.TextView;
 
 import com.android.volley.Request;
@@ -22,21 +24,25 @@ import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.gson.Gson;
 import com.itcast.zhbj.R;
+import com.itcast.zhbj.activity.NewsDetailUI;
 import com.itcast.zhbj.bean.NewsCenterBean;
 import com.itcast.zhbj.bean.NewsListPagerBean;
 import com.itcast.zhbj.constant.Constants;
 import com.itcast.zhbj.controller.BaseController;
 import com.itcast.zhbj.controller.menu.NewsMenuController;
 import com.itcast.zhbj.utils.DensityUtils;
+import com.itcast.zhbj.utils.LogUtils;
 import com.itcast.zhbj.utils.PreferenceUtils;
 import com.squareup.picasso.Picasso;
+
+import org.itheima19.library.RefreshListView;
 
 import java.util.List;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
 
-public class NewsListController extends BaseController implements ViewPager.OnPageChangeListener, NewsMenuController.OnViewIDLEListener {
+public class NewsListController extends BaseController implements ViewPager.OnPageChangeListener, NewsMenuController.OnViewIDLEListener, RefreshListView.OnRefreshListener, AdapterView.OnItemClickListener {
     @Bind(R.id.news_top_viewpager)
     ViewPager mNewsTopViewpager;
     @Bind(R.id.news_top_tv_title)
@@ -44,12 +50,14 @@ public class NewsListController extends BaseController implements ViewPager.OnPa
     @Bind(R.id.news_top_point_container)
     LinearLayout mNewsTopPointContainer;
 
-    private ListView mNewsListview;
+    private RefreshListView mNewsListView;
 
     private NewsCenterBean.NewsCenterPagerBean mData;
     private List<NewsListPagerBean.TopNewsBean> mTopNewsDatas;
     private SwitchTask mTask;
     private List<NewsListPagerBean.NewsBean> mNewsDatas;
+    private String mMoreUrl;
+    private NewsAdapter mNewsAdapter;
 
     public NewsListController(Context context, NewsCenterBean.NewsCenterPagerBean bean) {
         super(context);
@@ -63,9 +71,13 @@ public class NewsListController extends BaseController implements ViewPager.OnPa
         View topView = View.inflate(context, R.layout.news_top, null);
         ButterKnife.bind(this, topView);
 
-        mNewsListview = (ListView) view.findViewById(R.id.news_listview);
+        mNewsListView = (RefreshListView) view.findViewById(R.id.news_listview);
+        //刷新监听
+        mNewsListView.addOnRefreshListener(this);
+        //点击条目的监听
+        mNewsListView.setOnItemClickListener(this);
 
-        mNewsListview.addHeaderView(topView);
+        mNewsListView.addHeaderView(topView);
         return view;
     }
 
@@ -110,6 +122,8 @@ public class NewsListController extends BaseController implements ViewPager.OnPa
         NewsListPagerBean bean = gson.fromJson(json, NewsListPagerBean.class);
         //轮播图数据
         mTopNewsDatas = bean.data.topnews;
+        //更多数据加载的url
+        mMoreUrl = bean.data.more;
 
         mNewsTopViewpager.setAdapter(new TopNewsAdapter());
         //轮播图title
@@ -144,7 +158,94 @@ public class NewsListController extends BaseController implements ViewPager.OnPa
         pagerListener();
         //获取新闻条目数据
         mNewsDatas = bean.data.news;
-        mNewsListview.setAdapter(new NewsAdapter());
+        mNewsAdapter = new NewsAdapter();
+        mNewsListView.setAdapter(mNewsAdapter);
+    }
+
+    @Override
+    public void onRefreshing() {
+        final String url = Constants.BASE_URL + mData.url;
+        final RequestQueue queue = Volley.newRequestQueue(mContext);
+        Response.Listener<String> success = new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+                //存储缓存
+                PreferenceUtils.putString(mContext, url, response);
+                //json --》 object ---》ui
+                processData(response);
+                //通知刷新完成
+                mNewsListView.refreshFinish();
+            }
+        };
+
+        Response.ErrorListener error = new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                //通知刷新完成
+                mNewsListView.refreshFinish();
+
+            }
+        };
+
+        StringRequest request = new StringRequest(Request.Method.GET, url, success, error);
+
+        queue.add(request);
+    }
+
+    @Override
+    public void onLoadingMore() {
+
+        if(TextUtils.isEmpty(mMoreUrl)){
+            mNewsListView.refreshFinish(false);
+            return;
+        }
+
+        String url = Constants.BASE_URL + mMoreUrl;
+
+        RequestQueue queue = Volley.newRequestQueue(mContext);
+        Response.Listener<String> success = new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+                Gson gson = new Gson();
+                NewsListPagerBean bean = gson.fromJson(response, NewsListPagerBean.class);
+                //保留下一页加载的数据
+                mMoreUrl = bean.data.more;
+
+                List<NewsListPagerBean.NewsBean> moreNews = bean.data.news;
+                //数据添加到集合
+                mNewsDatas.addAll(moreNews);
+                //ui进行更新
+                mNewsAdapter.notifyDataSetChanged();
+
+                //下面没有更多时 不显示加载更多
+                mNewsListView.refreshFinish(!TextUtils.isEmpty(mMoreUrl));
+            }
+        };
+
+        Response.ErrorListener error = new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                mNewsListView.refreshFinish();
+            }
+        };
+        StringRequest request = new StringRequest(Request.Method.GET, url, success, error);
+        queue.add(request);
+    }
+
+    @Override
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+        //获得listView头的数量
+        position = position - mNewsListView.getHeaderViewsCount();
+        LogUtils.p(mNewsListView.getHeaderViewsCount()+"#####ListView的头数");
+        NewsListPagerBean.NewsBean bean = mNewsDatas.get(position);
+        //已读
+        PreferenceUtils.putBoolean(mContext, bean.id + "", true);
+        //更新UI
+        mNewsAdapter.notifyDataSetChanged();
+        //跳转到新闻详情
+        Intent intent = new Intent(mContext,NewsDetailUI.class);
+           intent.putExtra(NewsDetailUI.KEY_URL,bean.url);
+        mContext.startActivity(intent);
     }
 
     private class NewsAdapter extends BaseAdapter {
@@ -193,6 +294,9 @@ public class NewsListController extends BaseController implements ViewPager.OnPa
             url = url.replace(Constants.REPLACE_OLD, Constants.REPLACE_NEW);
             //记载图片
             Picasso.with(mContext).load(url).placeholder(R.mipmap.pic_item_list_default).error(R.mipmap.pic_item_list_default).into(holder.ivPic);
+            boolean isRead = PreferenceUtils.getBoolean(mContext, newsBean.id + "");
+            holder.tvTitle.setTextColor(isRead? Color.parseColor("#77000000"):Color.BLACK);
+
             return convertView;
         }
     }
