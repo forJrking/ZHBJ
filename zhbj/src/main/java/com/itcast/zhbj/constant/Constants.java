@@ -25,6 +25,6 @@ public interface Constants {
      * 延时校验时间
      */
     long DATA_DELAY = 10 * 1000;
-
+    //文字大小
     String KEY_TEXTSIZE = "textsize";
 }
