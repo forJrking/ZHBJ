@@ -145,7 +145,7 @@ public class NewsMenuController extends BaseController implements ViewPager.OnPa
             NewsListController newsListController = new NewsListController(mContext, bean);
             View rootView = newsListController.getRootView();
             container.addView(rootView);
-            //夹在数据
+            //加载数据
             newsListController.initData();
             //设置监听
             addOnViewIDLEListener(newsListController);

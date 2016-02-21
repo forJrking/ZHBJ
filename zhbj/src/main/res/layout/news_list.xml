@@ -6,7 +6,7 @@
     <!--轮播图-->
 
     <!--新闻条目-->
-    <ListView
+    <org.itheima19.library.RefreshListView
         android:id="@+id/news_listview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
